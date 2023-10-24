@@ -11,10 +11,19 @@ export default new (class ThreadService {
   async find(req: Request, res: Response): Promise<Response> {
     try {
       const threads = await this.ThreadRepository.find({
-        relations: [
-        ]
+        relations: ["userId"],
       });
-      return res.status(200).json(threads);
+
+      let newResponse = [];
+      threads.forEach((data) => {
+        newResponse.push({
+          ...data,
+          likes_count: Math.floor(Math.random() * 10),
+          replies_count: Math.floor(Math.random() * 10),
+        });
+      });
+
+      return res.status(200).json(newResponse);
     } catch (err) {
       return res.status(500).json({ error: "Error while getting threads" });
     }
@@ -32,6 +41,7 @@ export default new (class ThreadService {
       const thread = this.ThreadRepository.create({
         content: value.content,
         image: value.image,
+        userId: value.userId
       });
 
       const createdThread = await this.ThreadRepository.save(thread);

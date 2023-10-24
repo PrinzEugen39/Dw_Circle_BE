@@ -11,10 +11,13 @@ export class Threads {
 
   @Column({ nullable: true })
   image: string;
+
+  @Column({ type: "timestamp", default: () => "CURRENT_TIMESTAMP"})
+  created_at: Date;
   
   @ManyToOne(() => User, (user) => user.threads, {
     onUpdate: "CASCADE",
     onDelete: "CASCADE",
   })
-  user: User;
+  userId: User;
 }

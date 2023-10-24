@@ -24,7 +24,10 @@ export class User {
   @Column({ nullable: true })
   profile_description: string;
 
-  @OneToMany(() => Threads, (thread) => thread.user, {
+  @Column({ type: "timestamp", default: () => "CURRENT_TIMESTAMP"})
+  created_at: Date;
+
+  @OneToMany(() => Threads, (thread) => thread.userId, {
     onUpdate: "CASCADE",
     onDelete: "CASCADE",
   })
