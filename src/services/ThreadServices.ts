@@ -2,7 +2,10 @@ import { Repository } from "typeorm";
 import { Threads } from "../entities/Thread";
 import { AppDataSource } from "../data-source";
 import { Request, Response } from "express";
-import { createThreadSchema } from "../utils/validation/Thread";
+import {
+  createThreadSchema,
+  updateThreadSchema,
+} from "../utils/validation/ThreadValidation";
 
 export default new (class ThreadService {
   private readonly ThreadRepository: Repository<Threads> =
@@ -11,19 +14,30 @@ export default new (class ThreadService {
   async find(req: Request, res: Response): Promise<Response> {
     try {
       const threads = await this.ThreadRepository.find({
-        relations: ["userId"],
+        select: {
+          id: true,
+          content: true,
+          image: true,
+          created_at: true,
+          user_id: {
+            id: true,
+            full_name: true,
+            username: true,
+            email: true,
+            profile_picture: true,
+          },
+        },
+        relations: {
+          user_id: true,
+          replies: true,
+          like: true,
+        },
+        order: {
+          id: "DESC",
+        },
       });
 
-      let newResponse = [];
-      threads.forEach((data) => {
-        newResponse.push({
-          ...data,
-          likes_count: Math.floor(Math.random() * 10),
-          replies_count: Math.floor(Math.random() * 10),
-        });
-      });
-
-      return res.status(200).json(newResponse);
+      return res.status(200).json(threads);
     } catch (err) {
       return res.status(500).json({ error: "Error while getting threads" });
     }
@@ -37,17 +51,16 @@ export default new (class ThreadService {
       if (error) {
         return res.status(400).json({ Error: error.details[0].message });
       }
-      console.log(data);
       const thread = this.ThreadRepository.create({
         content: value.content,
         image: value.image,
-        userId: value.userId
+        user_id: value.user_id,
       });
 
       const createdThread = await this.ThreadRepository.save(thread);
       res.status(200).json(createdThread);
     } catch (err) {
-      return res.status(500).json({ error: "Error while creating thread" });
+      return res.status(500).json({ error: `${err}` });
     }
   }
 
@@ -57,6 +70,24 @@ export default new (class ThreadService {
       const thread = await this.ThreadRepository.findOne({
         where: {
           id: id,
+        },
+        select: {
+          id: true,
+          content: true,
+          image: true,
+          created_at: true,
+          user_id: {
+            id: true,
+            full_name: true,
+            username: true,
+            email: true,
+            profile_picture: true,
+          },
+        },
+        relations: {
+          user_id: true,
+          replies: true,
+          like: true,
         },
       });
       return res.status(200).json(thread);
@@ -71,14 +102,17 @@ export default new (class ThreadService {
       const thread = await this.ThreadRepository.findOne({
         where: { id: id },
       });
+      if (!thread)
+        return res.status(400).json({ error: `Thread at ${id} not found` });
+
       const data = req.body;
-      const { error, value } = createThreadSchema.validate(data);
+      const { error, value } = updateThreadSchema.validate(data);
 
       if (error) {
         return res.status(400).json({ error: error.details[0].message });
       }
-      thread.content = value.content;
-      thread.image = value.image;
+      if (value.content != "") thread.content = value.content;
+      if (value.image != "") thread.image = value.image;
 
       const update = await this.ThreadRepository.save(thread);
       return res.status(200).json(update);

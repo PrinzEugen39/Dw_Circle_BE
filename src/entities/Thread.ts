@@ -1,5 +1,16 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne } from "typeorm";
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  CreateDateColumn,
+  UpdateDateColumn,
+  JoinColumn,
+  OneToMany,
+} from "typeorm";
 import { User } from "./User";
+import { Replies } from "./Replies";
+import { Likes } from "./Likes";
 
 @Entity({ name: "threads" })
 export class Threads {
@@ -12,12 +23,30 @@ export class Threads {
   @Column({ nullable: true })
   image: string;
 
-  @Column({ type: "timestamp", default: () => "CURRENT_TIMESTAMP"})
+  @CreateDateColumn({ type: "timestamp with time zone" })
   created_at: Date;
-  
+
+  @UpdateDateColumn({ type: "timestamp with time zone" })
+  updated_at: Date;
+
   @ManyToOne(() => User, (user) => user.threads, {
     onUpdate: "CASCADE",
     onDelete: "CASCADE",
   })
-  userId: User;
+  @JoinColumn({ name: "user_id" })
+  user_id: User;
+
+  @OneToMany(() => Replies, (reply) => reply.thread_id, {
+    onUpdate: "CASCADE",
+    onDelete: "CASCADE",
+  })
+  @JoinColumn({ name: "reply_id" })
+  replies: Replies[];
+
+  @OneToMany(() => Likes, (like) => like.threads_id, {
+    onUpdate: "CASCADE",
+    onDelete: "CASCADE",
+  })
+  like: Likes[];
+
 }
