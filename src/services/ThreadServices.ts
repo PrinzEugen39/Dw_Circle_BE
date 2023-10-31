@@ -6,6 +6,7 @@ import {
   createThreadSchema,
   updateThreadSchema,
 } from "../utils/validation/ThreadValidation";
+import { v2 as cloudinary } from "cloudinary";
 
 export default new (class ThreadService {
   private readonly ThreadRepository: Repository<Threads> =
@@ -14,82 +15,102 @@ export default new (class ThreadService {
   async find(req: Request, res: Response): Promise<Response> {
     try {
       const threads = await this.ThreadRepository.find({
+        relations: ["user_id", "like.user_id", "replies"],
         select: {
-          id: true,
-          content: true,
-          image: true,
-          created_at: true,
           user_id: {
             id: true,
-            full_name: true,
             username: true,
-            email: true,
+            full_name: true,
             profile_picture: true,
           },
-        },
-        relations: {
-          user_id: true,
-          replies: true,
-          like: true,
+          like: {
+            id: true,
+            created_at: true,
+            updated_at: true,
+            user_id: {
+              id: true,
+              username: true,
+              full_name: true,
+              profile_picture: true,
+            },
+          },
         },
         order: {
           id: "DESC",
         },
       });
 
-      return res.status(200).json(threads);
+      return res.status(200).json(
+        threads.map((thread) => ({
+          ...thread,
+          numOfLikes: thread.like.length,
+          numOfReplies: thread.replies.length,
+        }))
+      );
     } catch (err) {
       return res.status(500).json({ error: "Error while getting threads" });
     }
   }
-
   async create(req: Request, res: Response): Promise<Response> {
     try {
-      const data = req.body;
+      cloudinary.config({
+        cloud_name: "dl7ttedsi",
+        api_key: "587567672326331",
+        api_secret: "Wd81XWachtK10Bd5GrbPuy-epyo",
+      });
+
+      let image;
+      if (res.locals.filename) {
+        image = res.locals.filename;
+        // cloudinary uploader
+        const cloudinaryResponse = await cloudinary.uploader.upload(
+          "src/uploads/" + image,
+          {
+            folder: "circle-app",
+          }
+        );
+        image = cloudinaryResponse.secure_url;
+      }
+
+      const data = {
+        content: req.body.content,
+        image: image,
+      };
+
+      const loginSession = res.locals.loginSession;
 
       const { error, value } = createThreadSchema.validate(data);
       if (error) {
         return res.status(400).json({ Error: error.details[0].message });
       }
+
       const thread = this.ThreadRepository.create({
         content: value.content,
-        image: value.image,
-        user_id: value.user_id,
+        image: image, // use the Cloudinary URL directly
+        user_id: {
+          id: loginSession.user.id,
+        },
       });
 
       const createdThread = await this.ThreadRepository.save(thread);
-      res.status(200).json(createdThread);
+      return res.status(200).json(createdThread); // make sure to return the response
     } catch (err) {
-      return res.status(500).json({ error: `${err}` });
+      return res.status(500).json({ error: err.message });
     }
   }
 
+  
   async findOne(req: Request, res: Response): Promise<Response> {
     try {
       const id = Number(req.params.id);
-      const thread = await this.ThreadRepository.findOne({
-        where: {
-          id: id,
-        },
-        select: {
-          id: true,
-          content: true,
-          image: true,
-          created_at: true,
-          user_id: {
-            id: true,
-            full_name: true,
-            username: true,
-            email: true,
-            profile_picture: true,
-          },
-        },
-        relations: {
-          user_id: true,
-          replies: true,
-          like: true,
-        },
-      });
+      const thread = await this.ThreadRepository.createQueryBuilder("thread")
+        .leftJoinAndSelect("thread.user_id", "user")
+        .leftJoinAndSelect("thread.replies", "replies")
+        .leftJoinAndSelect("replies.user_id", "replyUser")
+        .where("thread.id = :id", { id })
+        .orderBy("replies.id", "DESC")
+        .getOne();
+
       return res.status(200).json(thread);
     } catch (error) {
       return res.status(500).json({ error: "Error while getting a thread" });

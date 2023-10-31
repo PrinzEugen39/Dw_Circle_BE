@@ -6,6 +6,7 @@ import {
   createRepliesSchema,
   updateRepliesSchema,
 } from "../utils/validation/RepliesValidation";
+import { v2 as cloudinary } from "cloudinary";
 
 export default new (class RepliesService {
   private readonly RepliesRepository: Repository<Replies> =
@@ -15,6 +16,9 @@ export default new (class RepliesService {
     try {
       const reply = await this.RepliesRepository.find({
         relations: ["user_id", "thread_id"],
+        order: {
+          created_at: "DESC",
+        },
       });
 
       return res.status(200).json(reply);
@@ -27,19 +31,45 @@ export default new (class RepliesService {
 
   async create(req: Request, res: Response): Promise<Response> {
     try {
-      const data = req.body;
+      cloudinary.config({
+        cloud_name: "dl7ttedsi",
+        api_key: "587567672326331",
+        api_secret: "Wd81XWachtK10Bd5GrbPuy-epyo",
+      });
+
+      let image;
+      if (res.locals.filename) {
+        image = res.locals.filename;
+        // cloudinary uploader
+        const cloudinaryResponse = await cloudinary.uploader.upload(
+          "src/uploads/" + image,
+          {
+            folder: "circle-app",
+          }
+        );
+        image = cloudinaryResponse.secure_url;
+      }
+
+      const loginSession = res.locals.loginSession;
+
+      const data: any = {
+        content: req.body.content,
+        image: image,
+        thread_id: Number(req.body.thread_id),
+      };
 
       const { error, value } = createRepliesSchema.validate(data);
       if (error) {
         return res.status(400).json({ Error: error.details[0].message });
       }
-      //   console.log(value);
 
       const replies = this.RepliesRepository.create({
         content: value.content,
-        image: value.image,
+        image: image,
         thread_id: value.thread_id,
-        user_id: value.user_id,
+        user_id: {
+          id: loginSession.user.id,
+        },
       });
 
       const createdReplies = await this.RepliesRepository.save(replies);
@@ -56,7 +86,7 @@ export default new (class RepliesService {
         where: {
           id: id,
         },
-        relations: ["user_id", "thread_id"],
+        relations: ["user_id", "thread_id", "replies.user_id"],
       });
       return res.status(200).json(thread);
     } catch (error) {

@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToMany, CreateDateColumn, UpdateDateColumn } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, OneToMany, CreateDateColumn, UpdateDateColumn, ManyToMany, JoinTable } from "typeorm";
 import { Threads } from "./Thread";
 import { Replies } from "./Replies";
 import { Likes } from "./Likes";
@@ -17,7 +17,7 @@ export class User {
   @Column()
   email: string;
 
-  @Column({ select: false })
+  @Column({ select: true })
   password: string;
 
   @Column({ nullable: true })
@@ -43,6 +43,22 @@ export class User {
     onDelete: "CASCADE",
   })
   likes: Likes[];
+
+  @ManyToMany(() => User, user => user.users, {
+    nullable: true
+  })
+  @JoinTable({
+    name: "following",
+    joinColumn: {
+      name: "following_id",
+      referencedColumnName: "id"
+    },
+    inverseJoinColumn: {
+      name: "follower_id",
+      referencedColumnName: "id"
+    }
+  })
+  users: User[];
 
   @CreateDateColumn({ type: "timestamp with time zone" })
   created_at: Date;

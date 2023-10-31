@@ -2,9 +2,13 @@ import { Repository } from "typeorm";
 import { AppDataSource } from "../data-source";
 import { Request, Response } from "express";
 import { User } from "../entities/User";
-import { createUserSchema, updateUserSchema } from "../utils/validation/UserValidation";
+import {
+  createUserSchema,
+  updateUserSchema,
+} from "../utils/validation/UserValidation";
+import * as bcrypt from "bcrypt";
 
-export default new (class ThreadService {
+export default new (class UserServices {
   private readonly UserRepository: Repository<User> =
     AppDataSource.getRepository(User);
 
@@ -55,7 +59,7 @@ export default new (class ThreadService {
       });
       return res.status(200).json(thread);
     } catch (error) {
-      return res.status(500).json({ error: "Error while getting a thread" });
+      return res.status(500).json({ error: "Error while getting a user" });
     }
   }
 
@@ -71,8 +75,14 @@ export default new (class ThreadService {
       if (error) {
         return res.status(400).json({ error: error.details[0].message });
       }
+
+      // Hash the new password before saving it
+      if (value.password) {
+        const hashedPassword = await bcrypt.hash(value.password, 10);
+        user.password = hashedPassword;
+      }
+
       user.email = value.email;
-      user.password = value.password;
       user.username = value.username;
       user.full_name = value.full_name;
       user.profile_picture = value.profile_picture;
@@ -92,8 +102,7 @@ export default new (class ThreadService {
         where: { id: id },
       });
 
-      if (!thread)
-        return res.status(404).json({ Error: "User ID not found" });
+      if (!thread) return res.status(404).json({ Error: "User ID not found" });
 
       const response = await this.UserRepository.delete({ id: id });
       return res.status(200).json(response);
@@ -101,4 +110,26 @@ export default new (class ThreadService {
       res.status(500).json({ error: "Bad Request" });
     }
   }
+
+
+  // async unfollow(req: Request, res: Response): Promise<Response> {
+  //   try {
+  //     const followerId = Number(req.params.id); // the id of the user who wants to unfollow someone
+  //     const followingId = Number(req.body.followingId); // the id of the user to be unfollowed
+
+  //     const follower = await this.UserRepository.findOne({ relations: ["following"], where :{ id: followerId} });
+  //     const following = await this.UserRepository.findOne(followingId);
+
+  //     if (!follower || !following) {
+  //       return res.status(404).json({ error: "User not found" });
+  //     }
+
+  //     follower.following = follower.following.filter(user => user.id !== following.id);
+  //     await this.UserRepository.save(follower);
+
+  //     return res.status(200).json(follower);
+  //   } catch (error) {
+  //     return res.status(500).json({ error: "Error while unfollowing user" });
+  //   }
+  // }
 })();
