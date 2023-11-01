@@ -14,7 +14,9 @@ export default new (class UserServices {
 
   async find(req: Request, res: Response): Promise<Response> {
     try {
-      const user = await this.UserRepository.find();
+      const user = await this.UserRepository.find({
+        relations: ["following", "followers"],
+      });
 
       return res.status(200).json(user);
     } catch (error) {
@@ -51,11 +53,14 @@ export default new (class UserServices {
 
   async findOne(req: Request, res: Response): Promise<Response> {
     try {
-      const id = Number(req.params.id);
+      const loginSession = res.locals.loginSession;
+      if (!loginSession) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
       const thread = await this.UserRepository.findOne({
         where: {
-          id: id,
-        },
+          id: loginSession.user.id,
+        }, relations: ["following", "followers"],
       });
       return res.status(200).json(thread);
     } catch (error) {
@@ -111,25 +116,41 @@ export default new (class UserServices {
     }
   }
 
-
-  // async unfollow(req: Request, res: Response): Promise<Response> {
-  //   try {
-  //     const followerId = Number(req.params.id); // the id of the user who wants to unfollow someone
-  //     const followingId = Number(req.body.followingId); // the id of the user to be unfollowed
-
-  //     const follower = await this.UserRepository.findOne({ relations: ["following"], where :{ id: followerId} });
-  //     const following = await this.UserRepository.findOne(followingId);
-
-  //     if (!follower || !following) {
-  //       return res.status(404).json({ error: "User not found" });
-  //     }
-
-  //     follower.following = follower.following.filter(user => user.id !== following.id);
-  //     await this.UserRepository.save(follower);
-
-  //     return res.status(200).json(follower);
-  //   } catch (error) {
-  //     return res.status(500).json({ error: "Error while unfollowing user" });
-  //   }
-  // }
+  async follow(req: Request, res: Response): Promise<Response> {
+    try {
+      const loginSession = res.locals.loginSession;
+      const followingId = Number(req.body.followingId); 
+  
+      const follower = await this.UserRepository.findOne({
+        where: { id: loginSession.user.id },
+        relations: ["following"],
+      });
+      const following = await this.UserRepository.findOne({
+        where: { id: followingId },
+      });
+  
+      if (!follower || !following) {
+        return res.status(404).json({ error: "User not found" });
+      }
+  
+      // Check if the follower is already following the user
+      const isFollowing = follower.following.some(user => user.id === following.id);
+  
+      if (isFollowing) {
+        // If they are already following, unfollow
+        follower.following = follower.following.filter(user => user.id !== following.id);
+      } else {
+        // If they are not following yet, follow
+        follower.following.push(following);
+      }
+  
+      await this.UserRepository.save(follower);
+  
+      return res.status(200).json(follower);
+    } catch (error) {
+      return res.status(500).json({ error: "Error while following/unfollowing user" });
+    }
+  }
+  
 })();
+

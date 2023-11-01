@@ -2,6 +2,7 @@ import { AppDataSource } from "./data-source";
 import * as express from "express";
 import router from "./route";
 import * as cors from "cors";
+import "dotenv/config"
 
 AppDataSource.initialize()
   .then(async () => {

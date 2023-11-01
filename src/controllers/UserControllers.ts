@@ -8,13 +8,16 @@ export default new (class UserControllers {
   create(req: Request, res: Response) {
     UserServices.create(req, res);
   }
-    findOne(req: Request, res: Response) {
-      UserServices.findOne(req, res);
-    }
-    update(req: Request, res: Response) {
-      UserServices.update(req, res);
-    }
-    delete(req: Request, res: Response) {
-      UserServices.delete(req, res);
-    }
+  findOne(req: Request, res: Response) {
+    UserServices.findOne(req, res);
+  }
+  update(req: Request, res: Response) {
+    UserServices.update(req, res);
+  }
+  delete(req: Request, res: Response) {
+    UserServices.delete(req, res);
+  }
+  follow(req: Request, res: Response) {
+    UserServices.follow(req, res);
+  }
 })();

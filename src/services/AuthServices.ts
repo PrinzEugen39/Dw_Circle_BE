@@ -57,7 +57,15 @@ export default new (class AuthServices {
 
       const isCheckEmail = await this.AuthRepository.findOne({
         where: { email: value.email },
-        select: ["id", "full_name", "email", "password", "username"],
+        relations: ["following", "followers"],
+        select: {
+          followers: {
+            id: true,
+          },
+          following: {
+            id: true,
+          },
+        },
       });
 
       if (!isCheckEmail) {
@@ -82,12 +90,18 @@ export default new (class AuthServices {
         full_name: isCheckEmail.full_name,
         email: isCheckEmail.email,
         username: isCheckEmail.username,
+        followers: isCheckEmail.followers,
+        following: isCheckEmail.following,
       });
 
-      const token = await jwt.sign({ user }, "secret", { expiresIn: "1h" });
+      const token = await jwt.sign({ user }, "secret", { expiresIn: "6h" });
 
       return res.status(200).json({
-        user,
+        user: {
+          ...user,
+          numfollowers: user.followers.length,
+          numfollowing: user.following.length,
+        },
         token,
       });
     } catch (error) {
@@ -103,9 +117,25 @@ export default new (class AuthServices {
 
       const user = await this.AuthRepository.findOne({
         where: { id: loginSession.user.id },
-      })
+        relations: ["following", "followers"],
+        select: {
+          followers: {
+            id: true,
+          },
+          following: {
+            id: true,
+          },
+        },
+      });
 
-      return res.status(200).json({ user, message: "You are logged in" });
+      return res.status(200).json({
+        user: {
+          ...user,
+          numfollowers: user.followers.length,
+          numfollowing: user.following.length,
+        },
+        message: "You are logged in",
+      });
     } catch (error) {
       return res.status(500).json({
         Error: `${error}`,

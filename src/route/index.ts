@@ -28,11 +28,12 @@ router.delete("/thread/:id", ThreadControllers.delete);
 
 //user router
 router.get("/users", UserControllers.find);
-router.get("/user/:id", UserControllers.findOne);
+router.get("/user", AuthMiddleware.Authentication, UserControllers.findOne);
 router.post("/users", UserControllers.create);
 router.patch("/user/:id", UserControllers.update);
 router.delete("/user/:id", UserControllers.delete);
 
+router.post("/follow/", AuthMiddleware.Authentication, UserControllers.follow);
 
 //reply router
 router.get("/replies", ReplyControllers.find);

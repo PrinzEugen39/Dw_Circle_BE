@@ -1,4 +1,13 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToMany, CreateDateColumn, UpdateDateColumn, ManyToMany, JoinTable } from "typeorm";
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  OneToMany,
+  CreateDateColumn,
+  UpdateDateColumn,
+  ManyToMany,
+  JoinTable,
+} from "typeorm";
 import { Threads } from "./Thread";
 import { Replies } from "./Replies";
 import { Likes } from "./Likes";
@@ -44,21 +53,22 @@ export class User {
   })
   likes: Likes[];
 
-  @ManyToMany(() => User, user => user.users, {
-    nullable: true
-  })
+  @ManyToMany(() => User, (user) => user.following)
   @JoinTable({
-    name: "following",
+    name: "followers",
     joinColumn: {
-      name: "following_id",
-      referencedColumnName: "id"
+      name: "follower_id",
+      referencedColumnName: "id",
     },
     inverseJoinColumn: {
-      name: "follower_id",
-      referencedColumnName: "id"
-    }
+      name: "following_id",
+      referencedColumnName: "id",
+    },
   })
-  users: User[];
+  followers: User[];
+
+  @ManyToMany(() => User, (user) => user.followers)
+  following: User[];
 
   @CreateDateColumn({ type: "timestamp with time zone" })
   created_at: Date;
