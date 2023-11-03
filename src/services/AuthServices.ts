@@ -142,4 +142,6 @@ export default new (class AuthServices {
       });
     }
   }
+
+  
 })();

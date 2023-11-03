@@ -3,9 +3,9 @@ import * as amqp from "amqplib";
 export default new (class MessageQueue {
   async MessageSend(queueName: string, payload: any): Promise<Boolean> {
     try {
-      const connection = await amqp.connect(process.env.RABBIT_MQ);
+      const connection = await amqp.connect('amqp://localhost');
       const channel = await connection.createChannel();
-      console.log(connection);
+      // console.log(`rabbit error ${connection}`);
 
       await channel.assertQueue(queueName);
       channel.sendToQueue(queueName, Buffer.from(JSON.stringify(payload)));
@@ -15,7 +15,8 @@ export default new (class MessageQueue {
 
       return null;
     } catch (error) {
-      return error;
+      console.log(error);
+      return error
     }
   }
 })();

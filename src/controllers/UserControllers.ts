@@ -20,4 +20,7 @@ export default new (class UserControllers {
   follow(req: Request, res: Response) {
     UserServices.follow(req, res);
   }
+  updatePW(req: Request, res: Response) {
+    UserServices.updatebyJWT(req, res);
+  }
 })();

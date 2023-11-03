@@ -31,6 +31,11 @@ router.get("/users", UserControllers.find);
 router.get("/user", AuthMiddleware.Authentication, UserControllers.findOne);
 router.post("/users", UserControllers.create);
 router.patch("/user/:id", UserControllers.update);
+router.patch(
+  "/userpw/",
+  AuthMiddleware.Authentication,
+  UserControllers.updatePW
+);
 router.delete("/user/:id", UserControllers.delete);
 
 router.post("/follow/", AuthMiddleware.Authentication, UserControllers.follow);

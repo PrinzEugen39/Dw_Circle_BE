@@ -1,12 +1,13 @@
 import { Request, Response } from "express";
 import ThreadServices from "../services/ThreadServices";
+import ThreadQueue from "../queue/ThreadQueue";
 
 export default new (class ThreadControllers {
   find(req: Request, res: Response) {
     ThreadServices.find(req, res);
   }
   create(req: Request, res: Response) {
-    ThreadServices.create(req, res);
+    ThreadQueue.create(req, res);
   }
   findOne(req: Request, res: Response) {
     ThreadServices.findOne(req, res);

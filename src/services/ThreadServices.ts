@@ -58,6 +58,7 @@ export default new (class ThreadService {
         api_key: "587567672326331",
         api_secret: "Wd81XWachtK10Bd5GrbPuy-epyo",
       });
+      
 
       let image;
       if (res.locals.filename) {
@@ -86,7 +87,7 @@ export default new (class ThreadService {
 
       const thread = this.ThreadRepository.create({
         content: value.content,
-        image: image, // use the Cloudinary URL directly
+        image: image, 
         user_id: {
           id: loginSession.user.id,
         },
