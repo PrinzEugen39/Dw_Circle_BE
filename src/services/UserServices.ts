@@ -7,6 +7,7 @@ import {
   updateUserSchema,
 } from "../utils/validation/UserValidation";
 import * as bcrypt from "bcrypt";
+import { RedisClient, DEFAULT_EXPIRATION } from "../utils/caching-redis/redis";
 
 export default new (class UserServices {
   private readonly UserRepository: Repository<User> =
@@ -54,18 +55,38 @@ export default new (class UserServices {
   async findOne(req: Request, res: Response): Promise<Response> {
     try {
       const loginSession = res.locals.loginSession;
+
       if (!loginSession) {
         return res.status(401).json({ error: "Unauthorized ga tau ngapa" });
       }
-      const thread = await this.UserRepository.findOne({
-        where: {
-          id: loginSession.user.id,
-        },
-        relations: ["following", "followers", "threads"],
-      });
-      return res.status(200).json(thread);
+      const redisKey = loginSession.user.id.toString();
+      const RedisCache = await RedisClient.get(redisKey);
+      if (RedisCache) {
+        return res.status(200).json({
+          code: 200,
+          status: "success",
+          message: "Find one user from cache",
+          data: JSON.parse(RedisCache),
+        });
+      } else {
+        const user = await this.UserRepository.findOne({
+          where: {
+            id: loginSession.user.id,
+          },
+          relations: ["following", "followers", "threads"],
+        });
+
+        RedisClient.setEx(
+          redisKey,
+          DEFAULT_EXPIRATION,
+          JSON.stringify(user)
+        );
+
+        return res.status(200).json(user);
+      }
     } catch (error) {
-      return res.status(500).json({ error: "Error while getting a user" });
+      console.error("Error in findOne:", error);      
+      return res.status(500).json({ error: `${error}` });
     }
   }
 
