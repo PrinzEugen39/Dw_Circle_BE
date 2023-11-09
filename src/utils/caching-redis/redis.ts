@@ -8,9 +8,8 @@ const RedisClient = createClient({
   },
 });
 
-RedisClient.on("error", (error) => {
-  console.log("Redis Client", error);
-  process.exit(1);
+RedisClient.on("error", function (error) {
+  console.error(error);
 });
 
 export async function redisConnect() {
@@ -25,4 +24,4 @@ export async function redisConnect() {
 
 const DEFAULT_EXPIRATION = 3600;
 
-export { RedisClient, DEFAULT_EXPIRATION }
+export { RedisClient, DEFAULT_EXPIRATION };

@@ -61,13 +61,11 @@ export default new (class UserServices {
       }
       const redisKey = loginSession.user.id.toString();
       const RedisCache = await RedisClient.get(redisKey);
+
       if (RedisCache) {
-        return res.status(200).json({
-          code: 200,
-          status: "success",
-          message: "Find one user from cache",
-          data: JSON.parse(RedisCache),
-        });
+        return res
+          .status(200)
+          .json({ data: JSON.parse(RedisCache), from: "cache" });
       } else {
         const user = await this.UserRepository.findOne({
           where: {
@@ -76,16 +74,12 @@ export default new (class UserServices {
           relations: ["following", "followers", "threads"],
         });
 
-        RedisClient.setEx(
-          redisKey,
-          DEFAULT_EXPIRATION,
-          JSON.stringify(user)
-        );
+        RedisClient.setEx(redisKey, DEFAULT_EXPIRATION, JSON.stringify(user));
 
-        return res.status(200).json(user);
+        return res.status(200).json({ data: user, from: "query" });
       }
     } catch (error) {
-      console.error("Error in findOne:", error);      
+      console.error("Error in findOne:", error);
       return res.status(500).json({ error: `${error}` });
     }
   }
@@ -148,6 +142,7 @@ export default new (class UserServices {
       user.profile_description = value.profile_description;
 
       const update = await this.UserRepository.save(user);
+      RedisClient.del(loginSession.user.id.toString());
       return res.status(200).json(update);
     } catch (error) {
       res.status(500).json({ error: "Error while updating user" });
@@ -203,7 +198,7 @@ export default new (class UserServices {
       }
 
       await this.UserRepository.save(follower);
-
+      RedisClient.del(loginSession.user.id.toString());
       return res.status(200).json(follower);
     } catch (error) {
       return res
