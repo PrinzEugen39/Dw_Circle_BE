@@ -3,13 +3,13 @@ import * as express from "express";
 import router from "./route";
 import * as cors from "cors";
 import "dotenv/config"
-import { redisConnect } from "./utils/caching-redis/redis";
+// import { redisConnect } from "./utils/caching-redis/redis";
 
 AppDataSource.initialize()
   .then(async () => {
     const app = express();
     const port = 5069;
-    redisConnect();
+    // redisConnect();
 
     app.use(cors());
     app.use(express.json());

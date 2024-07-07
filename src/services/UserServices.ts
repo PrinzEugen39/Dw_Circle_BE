@@ -7,7 +7,7 @@ import {
   updateUserSchema,
 } from "../utils/validation/UserValidation";
 import * as bcrypt from "bcrypt";
-import { RedisClient, DEFAULT_EXPIRATION } from "../utils/caching-redis/redis";
+// import { RedisClient, DEFAULT_EXPIRATION } from "../utils/caching-redis/redis";
 
 export default new (class UserServices {
   private readonly UserRepository: Repository<User> =
@@ -59,9 +59,9 @@ export default new (class UserServices {
       if (!loginSession) {
         return res.status(401).json({ error: "Unauthorized ga tau ngapa" });
       }
-      const redisKey = loginSession.user.id.toString();
-      const RedisCache = await RedisClient.get(redisKey);
-
+      // const redisKey = loginSession.user.id.toString();
+      // const RedisCache = await RedisClient.get(redisKey);
+      const RedisCache = null;
       if (RedisCache) {
         return res
           .status(200)
@@ -74,7 +74,7 @@ export default new (class UserServices {
           relations: ["following", "followers", "threads"],
         });
 
-        RedisClient.setEx(redisKey, DEFAULT_EXPIRATION, JSON.stringify(user));
+        // RedisClient.setEx(redisKey, DEFAULT_EXPIRATION, JSON.stringify(user));
 
         return res.status(200).json({ data: user, from: "query" });
       }
@@ -142,7 +142,7 @@ export default new (class UserServices {
       user.profile_description = value.profile_description;
 
       const update = await this.UserRepository.save(user);
-      RedisClient.del(loginSession.user.id.toString());
+      // RedisClient.del(loginSession.user.id.toString());
       return res.status(200).json(update);
     } catch (error) {
       res.status(500).json({ error: "Error while updating user" });
@@ -198,7 +198,7 @@ export default new (class UserServices {
       }
 
       await this.UserRepository.save(follower);
-      RedisClient.del(loginSession.user.id.toString());
+      // RedisClient.del(loginSession.user.id.toString());
       return res.status(200).json(follower);
     } catch (error) {
       return res
