@@ -2,7 +2,7 @@ import { AppDataSource } from "./data-source";
 import * as express from "express";
 import router from "./route";
 import * as cors from "cors";
-import "dotenv/config"
+import "dotenv/config";
 // import { redisConnect } from "./utils/caching-redis/redis";
 
 AppDataSource.initialize()
@@ -17,7 +17,7 @@ AppDataSource.initialize()
 
     app.listen(port, () => {
       console.log(`Server is running on port ${port}`);
-      console.log("Made by PrinzEugen39")
+      console.log("Made by PrinzEugen39");
     });
   })
   .catch((error) => {
