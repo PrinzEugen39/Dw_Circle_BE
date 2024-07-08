@@ -2,7 +2,7 @@ module.exports = {
   apps: [{
       name: "Circle BE",
       script: "npm",
-      args: "start:prod -- -p 9902",
+      args: "run start:prod -- -p 9902",
       watch: true,
   }]
 }
